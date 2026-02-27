@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档搜索引擎</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>文档搜索引擎</h1>
+            <p>搜索您的文档集合（支持MD、HTML、DOCX、PDF等格式）</p>
+        </header>
+
+        <main>
+            <section class="search-section">
+                <form id="searchForm">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" placeholder="输入要搜索的关键字..." autocomplete="off" autofocus>
+                        <button type="submit">搜索</button>
+                    </div>
+                    <div class="options-group">
+                        <label for="limit">结果数量:</label>
+                        <select id="limit">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        
+                        <label for="indexPath">索引目录:</label>
+                        <input type="text" id="indexPath" placeholder="例如: ./documents" value="./example">
+                    </div>
+                </form>
+            </section>
+
+            <section class="controls">
+                <button id="indexBtn" class="btn-secondary">索引文档</button>
+                <div class="status" id="status"></div>
+            </section>
+
+            <section class="results-section">
+                <div id="resultsCount"></div>
+                <div id="resultsContainer"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2023 文档搜索引擎. 由 bluecap666 开发.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
