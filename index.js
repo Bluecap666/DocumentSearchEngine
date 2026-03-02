@@ -58,12 +58,9 @@ app.get('/api/search', async (req, res) => {
 
 // 索引API
 app.post('/api/index', async (req, res) => {
-  const { directory } = req.body;
+  // 安全起见，固定索引目录为'docs'，不再从请求中接收目录参数
+  const directory = 'docs';
   
-  if (!directory) {
-    return res.status(400).json({ error: 'Directory path is required' });
-  }
-
   try {
     await searchEngine.indexDirectory(directory);
     res.json({ message: `Indexed documents from ${directory}` });
