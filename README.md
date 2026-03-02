@@ -19,6 +19,7 @@
 
 - `.html` / `.htm` - HTML网页文件
 - `.md` / `.markdown` - Markdown文档
+- `.txt` - 纯文本文件
 
 ## 🚀 快速开始
 
@@ -51,7 +52,7 @@ npm start
 
 ## 📖 使用说明
 
-1. 系统会在页面加载时自动索引 `./example` 目录下的文档
+1. 系统会在页面加载时自动索引 `./docs` 目录下的文档
 2. 在搜索框中输入关键词
 3. 点击搜索按钮查看结果
 4. 点击搜索结果在新窗口中查看文档
@@ -85,6 +86,7 @@ npm start
 - [Cheerio](https://cheerio.js.org/) - HTML解析
 - [Marked](https://marked.js.org/) - Markdown解析
 - [Glob](https://github.com/isaacs/node-glob) - 文件路径匹配
+- [Mammoth.js](https://github.com/mwilliamson/mammoth.js/) - Word文档解析（已移除）
 
 ## 📁 项目结构
 
@@ -93,14 +95,16 @@ DocumentSearchEngine/
 ├── public/                 # 静态资源（HTML, CSS, JS）
 │   ├── index.html          # 主页
 │   ├── styles.css          # 样式文件
-│   └── script.js           # 客户端脚本
+│   ├── script.js           # 客户端脚本
+│   ├── view-document.html  # 文档查看页面
+│   └── view-script.js      # 文档查看页面脚本
 ├── index.js                # 主服务入口
 ├── src/
 │   ├── SearchEngine.js     # 搜索引擎主类
 │   └── services/           # 各种文档格式解析服务
 │       ├── HtmlService.js
 │       └── MarkdownService.js
-├── example/                # 示例文档目录
+├── docs/                   # 示例文档目录
 ├── screenshots/            # 界面截图
 ├── package.json
 └── README.md
@@ -111,15 +115,19 @@ DocumentSearchEngine/
 ### 索引文档
 
 ```bash
-curl -X POST http://localhost:3000/api/index \
-  -H "Content-Type: application/json" \
-  -d '{"directory": "/path/to/documents"}'
+curl -X POST http://localhost:3000/api/index
 ```
 
 ### 搜索文档
 
 ```bash
 curl "http://localhost:3000/api/search?q=search+term&limit=10"
+```
+
+### 获取文档内容
+
+```bash
+curl "http://localhost:3000/api/document-content?path=path/to/doc.md"
 ```
 
 ## 🤝 贡献

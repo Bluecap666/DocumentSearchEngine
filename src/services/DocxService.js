@@ -20,4 +20,5 @@ class DocxService {
 }
 
 module.exports = DocxService;
-// This file has been removed as DOCX support has been discontinued
+// DOCX support has been removed
+// This file is kept for compatibility but does nothing

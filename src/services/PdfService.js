@@ -20,4 +20,5 @@ class PdfService {
 }
 
 module.exports = PdfService;
-// This file has been removed as PDF support has been discontinued
+// PDF support has been removed
+// This file is kept for compatibility but does nothing

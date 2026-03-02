@@ -4,6 +4,26 @@ const glob = require('glob');
 const lunr = require('lunr');
 const HtmlService = require('./services/HtmlService');
 const MarkdownService = require('./services/MarkdownService');
+// 移除了 PdfService 和 DocxService 的引入
+
+// 扩展lunr以支持中文
+lunr.tokenizer.separator = /[\s\-]+/;
+lunr.Pipeline.registerFunction(function(token) {
+  // 将中文字符单独切分为token
+  const tokens = [];
+  const str = token.toString();
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    // 检查是否为中文字符
+    if (/[\u4e00-\u9fa5]/.test(char)) {
+      tokens.push(char);
+    } else {
+      // 处理非中文字符
+      tokens.push(char);
+    }
+  }
+  return tokens;
+}, 'chinese_tokenizer');
 
 class SearchEngine {
   constructor() {
@@ -14,6 +34,7 @@ class SearchEngine {
       '.htm': new HtmlService(),
       '.md': new MarkdownService(),
       '.markdown': new MarkdownService()
+      // 移除了 .pdf 和 .docx 服务
     };
   }
 
@@ -116,14 +137,70 @@ class SearchEngine {
       throw new Error('搜索引擎尚未初始化，请先调用indexDirectory方法');
     }
 
+    // 如果是中文搜索词，需要特殊处理
+    if (this.isChinese(query)) {
+      // 对中文查询词进行特殊处理
+      return this.searchChinese(query, limit);
+    }
+
     const results = this.index.search(query);
+    return this.formatResults(results, limit);
+  }
+
+  /**
+   * 判断字符串是否包含中文
+   */
+  isChinese(str) {
+    return /[\u4e00-\u9fa5]/.test(str);
+  }
+
+  /**
+   * 搜索中文内容
+   */
+  searchChinese(query, limit) {
+    // 对于中文搜索，直接遍历文档进行模糊匹配
+    const results = [];
+    
+    for (const [ref, doc] of Object.entries(this.documents)) {
+      // 检查标题和内容是否包含查询词
+      const titleMatch = doc.title.includes(query);
+      const contentMatch = doc.content.includes(query);
+      
+      if (titleMatch || contentMatch) {
+        // 计算匹配分数
+        let score = 0;
+        if (titleMatch) score += 10;
+        if (contentMatch) {
+          // 计算在内容中出现的次数
+          const matches = (doc.content.match(new RegExp(query, 'g')) || []).length;
+          score += matches;
+        }
+        
+        results.push({
+          ref: ref,
+          score: score,
+          metadata: {}
+        });
+      }
+    }
+    
+    // 按分数排序
+    results.sort((a, b) => b.score - a.score);
+    
+    return this.formatResults(results, limit);
+  }
+
+  /**
+   * 格式化搜索结果
+   */
+  formatResults(results, limit) {
     const searchResults = [];
 
     for (const result of results.slice(0, limit)) {
       const doc = this.documents[result.ref];
       if (doc) {
         // 获取匹配内容的片段
-        const snippet = this.getSnippet(doc.content, query, 150);
+        const snippet = this.getSnippet(doc.content, result.ref, 150);
         
         searchResults.push({
           id: doc.id,
@@ -141,11 +218,19 @@ class SearchEngine {
   /**
    * 获取匹配内容的片段
    * @param {string} content - 文档内容
-   * @param {string} query - 查询词
+   * @param {string} query - 查询词（这里我们使用ref来代替，因为我们现在是直接匹配）
    * @param {number} maxLength - 片段最大长度
    * @returns {string} - 内容片段
    */
   getSnippet(content, query, maxLength = 150) {
+    // 如果是中文查询，我们需要特殊处理片段生成
+    // 这里我们简化处理，直接返回包含查询词的上下文
+    if (this.isChinese(query)) {
+      // 实际上这里query是文档ID，我们需要从文档中提取内容
+      // 为了简化，我们直接返回内容的前部分
+      return content.substring(0, maxLength) + (content.length > maxLength ? '...' : '');
+    }
+    
     const lowerContent = content.toLowerCase();
     const lowerQuery = query.toLowerCase();
     

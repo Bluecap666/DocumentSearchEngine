@@ -23,20 +23,11 @@ try {
 
 // 验证是否为合法的文档路径（防止路径遍历攻击）
 function isValidDocumentPath(resolvedPath) {
-  // 检查文件扩展名
+  // 检查文件扩展名 - 只支持纯文本格式
   const supportedExtensions = ['.txt', '.md', '.markdown', '.html', '.htm'];
   const ext = path.extname(resolvedPath).toLowerCase();
   
-  // 对于非文本文件，我们不能直接返回其内容
-  const textExtensions = ['.txt', '.md', '.markdown', '.html', '.htm'];
-  
-  // 检查文件是否存在于索引中，如果是文本文件则允许，否则只允许已知索引的文件
-  if (!textExtensions.includes(ext)) {
-    // 检查是否在搜索引擎的文档集合中
-    return searchEngine && searchEngine.documents && searchEngine.documents.hasOwnProperty(resolvedPath) && resolvedPath.startsWith(path.resolve('.'));
-  }
-  
-  return textExtensions.includes(ext) && resolvedPath.startsWith(path.resolve('.'));
+  return supportedExtensions.includes(ext) && resolvedPath.startsWith(path.resolve('.'));
 }
 
 // 搜索API
@@ -96,6 +87,7 @@ app.get('/api/document-content', async (req, res) => {
     res.status(500).json({ error: 'Failed to read document' });
   }
 });
+
 
 // 根路由 - 返回搜索页面
 app.get('/', (req, res) => {

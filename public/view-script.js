@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadDocumentContent(docPath, searchTerm) {
     try {
+        const fileExtension = getFileExtension(docPath);
+        
         // 构造API端点以获取文档原始内容
         const response = await fetch(`/api/document-content?path=${encodeURIComponent(docPath)}`);
         
@@ -25,15 +27,18 @@ async function loadDocumentContent(docPath, searchTerm) {
         
         const data = await response.json();
         const content = data.content;
-        const fileExtension = getFileExtension(docPath);
         
         // 根据文件类型决定如何显示内容
         let htmlContent = '';
         if (fileExtension === '.html' || fileExtension === '.htm') {
-            // 对于HTML文件，直接插入内容
-            htmlContent = content;
+            // 对于HTML文件，创建一个临时的数据URL并在iframe中显示
+            const blob = new Blob([content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            // 创建iframe来显示HTML内容
+            htmlContent = `<iframe src="${url}" class="document-frame" onload="handleIframeLoad(this, '${searchTerm}')"></iframe>`;
         } else {
-            // 对于其他文件类型，转义HTML并使用预格式化文本显示
+            // 对于其他文本文件（如MD等），转义HTML并使用预格式化文本显示
             const escapedContent = escapeHtml(content);
             
             // 如果有搜索词，高亮显示
@@ -49,21 +54,79 @@ async function loadDocumentContent(docPath, searchTerm) {
         // 将内容显示在页面上
         const contentElement = document.getElementById('documentContent');
         contentElement.innerHTML = htmlContent;
-        
-        // 如果有搜索词，尝试滚动到第一个匹配项
-        if (searchTerm) {
-            setTimeout(() => {
-                const firstHighlight = document.querySelector('.search-term-highlight');
-                if (firstHighlight) {
-                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    firstHighlight.focus();
-                }
-            }, 100);
-        }
     } catch (error) {
         console.error('加载文档内容时出错:', error);
         document.getElementById('documentContent').innerHTML = 
             `<div class="error">加载文档时发生错误: ${error.message}</div>`;
+    }
+}
+
+// 处理iframe加载完成后的搜索词高亮
+function handleIframeLoad(iframe, searchTerm) {
+    if (!searchTerm) return;
+    
+    try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        
+        // 在iframe内部查找匹配的文本并高亮
+        const walker = iframeDoc.createTreeWalker(
+            iframeDoc.body,
+            iframeDoc.NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: function(node) {
+                    if (node.parentElement && node.parentElement.classList.contains('search-term-highlight')) {
+                        return iframeDoc.NodeFilter.FILTER_REJECT;
+                    }
+                    return iframeDoc.NodeFilter.SHOW_NODE;
+                }
+            }
+        );
+        
+        const textNodes = [];
+        let node;
+        
+        while (node = walker.nextNode()) {
+            textNodes.push(node);
+        }
+        
+        // 从后往前处理文本节点，避免位置偏移
+        textNodes.reverse().forEach(textNode => {
+            const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+            const matches = [...textNode.nodeValue.matchAll(regex)];
+            
+            if (matches.length > 0) {
+                matches.reverse().forEach(match => {
+                    const startIndex = match.index;
+                    const endIndex = startIndex + match[0].length;
+                    
+                    const beforeText = textNode.nodeValue.substring(0, startIndex);
+                    const matchText = textNode.nodeValue.substring(startIndex, endIndex);
+                    const afterText = textNode.nodeValue.substring(endIndex);
+                    
+                    const span = iframeDoc.createElement('span');
+                    span.className = 'search-term-highlight';
+                    span.textContent = matchText;
+                    
+                    if (beforeText) {
+                        textNode.nodeValue = beforeText;
+                        textNode.parentNode.insertBefore(span, textNode.nextSibling);
+                        if (afterText) {
+                            const afterTextNode = iframeDoc.createTextNode(afterText);
+                            textNode.parentNode.insertBefore(afterTextNode, span.nextSibling);
+                        }
+                    } else {
+                        textNode.parentNode.replaceChild(span, textNode);
+                        if (afterText) {
+                            const afterTextNode = iframeDoc.createTextNode(afterText);
+                            span.parentNode.insertBefore(afterTextNode, span.nextSibling);
+                        }
+                    }
+                });
+            }
+        });
+    } catch (e) {
+        // 跨域限制可能阻止访问iframe内容，忽略错误
+        console.warn('无法在iframe中高亮搜索词:', e);
     }
 }
 

@@ -7,12 +7,14 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         .document-container {
-            max-width: 900px;
+            max-width: none; /* 移除宽度限制以支持大型HTML内容 */
+            width: calc(100% - 4rem); /* 替代方案：接近全宽但保留边距 */
             margin: 2rem auto;
             padding: 2rem;
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+            overflow-x: auto; /* 添加水平滚动条以处理宽内容 */
         }
         
         .back-link {
@@ -29,6 +31,36 @@
         
         .document-content {
             line-height: 1.8;
+        }
+        
+        /* 专门用于显示HTML文档内容的样式 */
+        .html-document-content {
+            width: 100%;
+            min-height: 400px;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+        
+        .html-document-content img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* iframe显示各种文档的通用样式 */
+        .document-frame {
+            width: 100%;
+            height: 70vh;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .pdf-viewer {
+            min-height: 600px;
+        }
+        
+        .docx-viewer {
+            min-height: 600px;
         }
         
         .search-term-highlight {
